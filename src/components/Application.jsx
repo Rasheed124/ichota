@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router";
 
 const Application = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +13,8 @@ const Application = () => {
     resume: null,
     coverLetter: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false); 
+  const navigate = useNavigate(); 
 
   // Handle input change
   const handleInputChange = (e) => {
@@ -25,10 +30,8 @@ const Application = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    console.log(formData);
-
-    // // Prepare form data for submission
     const submitData = new FormData();
     submitData.append("firstName", formData.firstName);
     submitData.append("lastName", formData.lastName);
@@ -53,10 +56,12 @@ const Application = () => {
       }
 
       const result = await response.json();
-      alert("Application submitted successfully!");
+
       console.log(result);
 
-      // Reset Form data
+      toast.success("Application submitted successfully!", {
+        position: "top-right",
+      });
 
       setFormData({
         firstName: "",
@@ -64,14 +69,20 @@ const Application = () => {
         email: "",
         phone: "",
         countryCode: "+1",
-        file: null,
-        message: "",
+        resume: null,
+        coverLetter: "",
       });
+
+      setTimeout(() => {
+        navigate("/"); 
+      }, 2000);
+
     } catch (error) {
-      console.error("Error:", error.message);
-      alert(
-        "There was an error submitting your application. Please try again."
-      );
+      toast.error(`Error: ${error.message}`, {
+        position: "top-right",
+      });
+    } finally {
+      setIsSubmitting(false); 
     }
   };
 
@@ -81,6 +92,7 @@ const Application = () => {
         <h2 className="text-lg font-bold">Personal Information</h2>
         <div className="rounded-lg p-3 lg:col-span-3">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Form fields */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex gap-y-4 flex-col">
                 <label className="font-semibold" htmlFor="firstName">
@@ -96,7 +108,6 @@ const Application = () => {
                   required
                 />
               </div>
-
               <div className="flex gap-y-4 flex-col">
                 <label className="font-semibold" htmlFor="lastName">
                   Last Name*
@@ -128,7 +139,6 @@ const Application = () => {
                   required
                 />
               </div>
-
               <div className="flex gap-y-4 flex-col">
                 <label className="font-semibold" htmlFor="phone">
                   Phone number*
@@ -166,18 +176,33 @@ const Application = () => {
                 Supporting Documents
               </label>
               <span className="font-medium block">Resume/CV</span>
-              <div className="relative w-full border-3 border-dashed border-gray-200 rounded-lg p-3 min-h-56 text-sm text-gray-500 flex items-center justify-center cursor-pointer">
+              <div className="relative flex-col w-full border-3 border-dashed border-gray-200 rounded-lg p-3 min-h-56 text-sm text-gray-500 flex items-center justify-center cursor-pointer">
                 <input
                   type="file"
                   id="resume"
                   name="resume"
+                  accept=".jpg, .jpeg, .png, .pdf"
                   onChange={handleFileChange}
                   className="absolute inset-0 opacity-0 cursor-pointer"
                 />
-                <span className="pointer-events-none">
-                  <span className="font-bold">Upload a file</span> or drag and
-                  drop here
-                </span>
+                {!formData.resume && (
+                  <span className="pointer-events-none">
+                    <span className="font-bold">Upload a file</span> or drag and
+                    drop here
+                  </span>
+                )}
+
+                {/* Display the uploaded image if it exists */}
+                {formData.resume &&
+                  formData.resume.type.startsWith("image/") && (
+                    <div className="mt-4">
+                      <img
+                        src={URL.createObjectURL(formData.resume)}
+                        alt="Uploaded file preview"
+                        className="mt-2 max-w-xs rounded-lg shadow-md"
+                      />
+                    </div>
+                  )}
               </div>
             </div>
 
@@ -199,14 +224,20 @@ const Application = () => {
             <div className="flex justify-center mt-10">
               <button
                 type="submit"
-                className="inline-block rounded-full border border-current px-8 py-3 text-sm font-medium bg-[#1167B1] text-white transition hover:scale-110 hover:shadow-xl focus:outline-none focus:ring active:text-white/80"
+                className={`inline-block rounded-full border border-current px-8 py-3 text-sm font-medium ${
+                  isSubmitting
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-[#1167B1] text-white transition hover:scale-110 hover:shadow-xl"
+                }`}
+                disabled={isSubmitting}
               >
-                Apply
+                {isSubmitting ? "Submitting..." : "Apply"}
               </button>
             </div>
           </form>
         </div>
       </div>
+      <ToastContainer />
     </>
   );
 };
